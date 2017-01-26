@@ -1,0 +1,23 @@
+{
+  "name": "loborec/php-combine",
+  "description": "",
+  "keywords": ["php", "functions"],
+  "type": "library",
+  "homepage": "https://github.com/loborec/php-combine",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Dubravko Loborec",
+      "homepage": "http://www.DubravkoLoborec.com"
+    }
+  ],
+  "require": {
+    "php": ">=5.6.0",
+"tubalmartin/cssmin": "2.4.*",
+"tedivm/jshrink": "1.1.0",
+"oyejorge/less.php": "~1.7.0.9"
+  },
+  "autoload": {
+        "classmap": ["Combine.php"]
+    }
+}
