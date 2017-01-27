@@ -7,14 +7,14 @@
         public static function init($sources, $id, $dir){
             $result=false;
 
-            $less_array=self::extract_keys($sources,'less');
+            //$less_array=self::extract_keys($sources,'less');
 
 
             $js_array=self::extract_keys($sources,'js');
             $css_array=self::extract_keys($sources,'css'); 
             $copy_array=self::extract_keys($sources,'copy'); 
             //dump($sources);
-            self::less_init($less_array);
+            //self::less_init($less_array);
 
             $r1=self::js_init($js_array, $dir, $id);
             $r2=self::css_init($css_array, $dir, $id); 
@@ -60,13 +60,13 @@
             $x = '';
             foreach($sources as $source){ 
 
-            if (! isset($source['source'])){
-                echo 'Item not set<br>'.print_r($source);
-            die();
-            }    
-                
-            $x.= (string)filemtime($source['source']);
-               
+                if (! isset($source['source'])){
+                    echo 'Item not set<br>'.print_r($source);
+                    die();
+                }    
+
+                $x.= (string)filemtime($source['source']);
+
 
 
             }
@@ -126,41 +126,8 @@
             return ($ext=='gif') or ($ext=='png') or ($ext=='jpg') or ($ext=='jpeg');      
         } 
 
-        private static function less_init($sources){
-            foreach ($sources as $source){
-                if (! file_exists($source['source']))
-                    die('Not found: '.$source['source']);
-                self::less_compile($source);
-            }
-        }
-
-        private static function less_compile($source){
-
-            $inputFile=$source['source'];
-            $outputFile=$source['target'];
-
-            // load the cache
-            $cacheFile = $inputFile.".cache";
-
-            if (file_exists($cacheFile)) {
-                $cache = unserialize(file_get_contents($cacheFile));
-            } else {
-                $cache = $inputFile;
-            }
-
-            $less = new lessc;
-            $less->setImportDir(array(APP_LIBRARY));
-            $newCache = $less->cachedCompile($cache);
-
-            if (!is_array($cache) || $newCache["updated"] > $cache["updated"]) {
-                file_put_contents($cacheFile, serialize($newCache));
-                file_put_contents($outputFile, $newCache['compiled']);
-            }
-        }
 
         private static function css_init($sources, $dir, $id){
-
-
             $x=''; 
 
 
@@ -169,11 +136,18 @@
                 $dataURI=isset($source['dataURI']) and ($source['dataURI']===true); 
                 if ($dataURI){
                     $css = file_get_contents($source['source']);
-                    preg_match_all('/url\((.*)\)/',$css, $matches);
+                    // preg_match_all('/url\((.*)\)/', $css, $matches);
+
+                    preg_match_all('~\bbackground-image?\s*:(.*?)\(\s*(\'|")?(?<image>.*?)\3?\s*\)~i',$css,$matches);
 
                     foreach ($matches[0] as $match){
-                        $vowels = array("'", '\"', '"', 'url(', ')');   
-                        $image_name = str_replace($vowels, "", $match);
+
+                        $n1=strpos($match, '(');
+                        $n2=strpos($match, ')');
+                        $image_name=substr($match, $n1+1, $n2-$n1-1);
+                        $vowels = array("'", '\"', '"');   
+                        $image_name = str_replace($vowels, "", $image_name);
+
 
                         $ext=extract_file_ext($image_name); 
                         if (self::valid_ext($ext)){
@@ -213,7 +187,6 @@
 
 
                 $output_css='';
-                $compressor = new CSSmin(); 
                 foreach($sources as $source){ 
                     $dataURI=isset($source['dataURI']) and ($source['dataURI']===true); 
                     //
@@ -226,13 +199,24 @@
                     }
                     else
                     {   
-                        if ($dataURI)
-                            $css = self::uri_file_get_contents($source);  
-                        else     
-                            $css = file_get_contents($source['source']);
+                        $options = array(
+                            'compress'=>true, 
+                            'relativeUrls'=>false,
+                            'cache_dir'=>APP_ROOT.'/assets/cache'
+                        );
+                        $parser = new Less_Parser($options);
+                        //$parser->setImportDirs([APP_LIBRARY.'/loborec/yii-library/css']);
+                        $parser->parseFile($source['source'], '');
+                        $css=$parser->getCss();  
+
+                        if ($dataURI){
+                            $output_css.=self::uri_file_get_contents($css, $source); 
+                        }
+                        else  {   
+                            $output_css.=$css; 
+                        }
                         //
-                        $css = $compressor->run($css); 
-                        $output_css.=$css;
+
 
                         $table[]=array(extract_file_name($source['source']), filesize($source['source']),  mb_strlen($css), $dataURI?'Yes':'');  
                     } 
@@ -259,17 +243,26 @@
                 return false;
         }
 
-        private static function uri_file_get_contents($source){
-            $css=file_get_contents($source['source']);
+        private static function uri_file_get_contents($css, $source){
 
-            return preg_replace_callback( '/url\((.*)\)/', 
+            //$css=file_get_contents($source['source']);
+            //preg_match_all('~\bbackground-image?\s*:(.*?)\(\s*(\'|")?(?<image>.*?)\3?\s*\)~i',$css,$matches);
+            //return preg_replace_callback( '/url\((.*)\)/', 
+            return preg_replace_callback("/url\((.*?)\)/is", 
                 function($m) use ($source) { return self::preg_replacex($m[0], $source); },
                 $css); 
         }
 
         private static function preg_replacex($match, $source) {
-            $vowels = array("'", '\"', '"', 'url(', ')');
-            $image_name = str_replace($vowels, "", $match);
+
+
+            //$vowels = array("'", '\"', '"', 'url(', ')');
+            //$image_name = str_replace($vowels, "", $match);
+            $n1=strpos($match, '(');
+            $n2=strpos($match, ')');
+            $image_name=substr($match, $n1+1, $n2-$n1-1);
+            $vowels = array("'", '\"', '"');   
+            $image_name = str_replace($vowels, "", $image_name);
 
             $ext=extract_file_ext($image_name); 
             if (self::valid_ext($ext)){
@@ -290,6 +283,7 @@
         }
 
         private static function image_file($image_name, $source){
+
             $search_paths=array();
             $search_paths[]=extract_file_dir($source['source']);
 
