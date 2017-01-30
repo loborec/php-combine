@@ -84,6 +84,8 @@
                 $table=array();
                 $js = '';
                 foreach($sources as $source){ 
+                    
+                    $js .="\n/* ". extract_file_name($source['source'])." */\n"; 
                     if (strpos($source['source'],'min.js')!=0){ 
                         $j= file_get_contents($source['source']); 
 
@@ -95,20 +97,20 @@
                         $js .=$j;
                         $table[]=array(extract_file_name($source['source']), filesize($source['source']),  mb_strlen($j));  
                     }      
-                    $js .=';';     
+                    $js .="\n;\n"; //semicolon after new line!    
                 }
 
                 $header=array();
                 $header[]='/*!';
-                $header[]=str_pad('', 64,chr(151));
-                $header[]='|'.str_pad('dubravkodev.com javascript compactor',62,' ', STR_PAD_BOTH).'|'; 
-                $header[]=str_pad('', 64,chr(151));
+                $header[]=str_pad('', 64,'-');
+                $header[]='|'.str_pad('https://github.com/loborec/php-combine',62,' ', STR_PAD_BOTH).'|'; 
+                $header[]=str_pad('', 64,'-');
                 $header[]='|'.str_pad('File Name',40).'|'.str_pad('Orig. size',10,' ',STR_PAD_LEFT).'|'.str_pad('Comp. size',10,' ',STR_PAD_LEFT).'|'; 
-                $header[]=str_pad('', 64,chr(151));
+                $header[]=str_pad('', 64,'-');
                 for ($i = 0; $i <= count($table)-1 ; $i++) {
                     $header[]='|'.str_pad($table[$i][0],40).'|'.str_pad($table[$i][1],10,' ',STR_PAD_LEFT).'|'.str_pad($table[$i][2],10,' ',STR_PAD_LEFT).'|';              
                 }
-                $header[]=str_pad('', 64, chr(151));
+                $header[]=str_pad('', 64, '-');
                 $header[]='*/';
                 $header[]='';
 
@@ -126,12 +128,10 @@
             return ($ext=='gif') or ($ext=='png') or ($ext=='jpg') or ($ext=='jpeg');      
         } 
 
-
         private static function css_init($sources, $dir, $id){
             $x=''; 
 
-
-            /**** md5 slika! ****/
+            /**** md5 image! ****/
             foreach($sources as $source){ 
                 $dataURI=isset($source['dataURI']) and ($source['dataURI']===true); 
                 if ($dataURI){
@@ -190,6 +190,7 @@
                 foreach($sources as $source){ 
                     $dataURI=isset($source['dataURI']) and ($source['dataURI']===true); 
                     //
+                    $output_css .="\n/* ". extract_file_name($source['source'])." */\n";
                     if (strpos($source['source'],'min.css')!=0) 
                     {
                         $css = file_get_contents($source['source']);  
@@ -205,7 +206,6 @@
                             'cache_dir'=>APP_ROOT.'/assets/cache'
                         );
                         $parser = new Less_Parser($options);
-                        //$parser->setImportDirs([APP_LIBRARY.'/loborec/yii-library/css']);
                         $parser->parseFile($source['source'], '');
                         $css=$parser->getCss();  
 
@@ -217,22 +217,23 @@
                         }
                         //
 
-
                         $table[]=array(extract_file_name($source['source']), filesize($source['source']),  mb_strlen($css), $dataURI?'Yes':'');  
                     } 
+                    
+                   $output_css.="\n"; 
                 }
 
                 $header=array();
                 $header[]='/*!';
-                $header[]=str_pad('', 72, chr(151));
-                $header[]='|'.str_pad('dubravkodev.com css compactor',71,' ', STR_PAD_BOTH).'|'; 
-                $header[]=str_pad('', 72,chr(151));
+                $header[]=str_pad('', 72, '-');
+                $header[]='|'.str_pad('https://github.com/loborec/php-combine',71,' ', STR_PAD_BOTH).'|'; 
+                $header[]=str_pad('', 72,'-');
                 $header[]='|'.str_pad('File Name',40).'|'.str_pad('Orig. size',10,' ',STR_PAD_LEFT).'|'.str_pad('Comp. size',10,' ',STR_PAD_LEFT).'|'.str_pad('dataURI',7,' ',STR_PAD_LEFT).'|'; 
-                $header[]=str_pad('', 72,chr(151));
+                $header[]=str_pad('', 72,'-');
                 for ($i = 0; $i <= count($table)-1 ; $i++) {
                     $header[]='|'.str_pad($table[$i][0],40).'|'.str_pad($table[$i][1],10,' ',STR_PAD_LEFT).'|'.str_pad($table[$i][2],10,' ',STR_PAD_LEFT).'|'.str_pad($table[$i][3],7,' ',STR_PAD_BOTH).'|';              
                 }
-                $header[]=str_pad('', 72, chr(151));
+                $header[]=str_pad('', 72, '-');
                 $header[]='*/';
                 $header[]='';
 
@@ -244,7 +245,6 @@
         }
 
         private static function uri_file_get_contents($css, $source){
-
             //$css=file_get_contents($source['source']);
             //preg_match_all('~\bbackground-image?\s*:(.*?)\(\s*(\'|")?(?<image>.*?)\3?\s*\)~i',$css,$matches);
             //return preg_replace_callback( '/url\((.*)\)/', 
