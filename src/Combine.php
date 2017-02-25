@@ -86,7 +86,7 @@
                 foreach($sources as $source){ 
                     
                     $js .="\n/* ". extract_file_name($source['source'])." */\n"; 
-                    if (strpos($source['source'],'min.js')!=0){ 
+                    if ((strpos($source['source'],'min.js')!=0) or (isset($source['skip_compress']) and ($source['skip_compress']===true))){
                         $j= file_get_contents($source['source']); 
 
                         $js .=$j;
@@ -191,7 +191,7 @@
                     $dataURI=isset($source['dataURI']) and ($source['dataURI']===true); 
                     //
                     $output_css .="\n/* ". extract_file_name($source['source'])." */\n";
-                    if (strpos($source['source'],'min.css')!=0) 
+                    if ((strpos($source['source'],'min.css')!=0) or (isset($source['skip_compress']) and ($source['skip_compress']===true)))
                     {
                         $css = file_get_contents($source['source']);  
                         $output_css.=$css;  
